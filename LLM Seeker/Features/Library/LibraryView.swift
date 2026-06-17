@@ -90,14 +90,24 @@ struct LibraryView: View {
                 HStack(spacing: Theme.Spacing.md) {
                     Label(model.status.capitalized, systemImage: statusIcon(model.status))
                     Label(storageLabel(for: model), systemImage: "internaldrive")
-                    if let q = model.quantization {
-                        Label(q, systemImage: "rectangle.compress.vertical")
-                    }
-                    if let lastShared = model.lastSharedAt {
-                        Label(lastShared.formatted(date: .numeric, time: .shortened), systemImage: "paperplane")
-                    }
+                    Spacer(minLength: 0)
                 }
                 .font(Theme.Typography.caption).foregroundStyle(Theme.textSecondary)
+                .lineLimit(1)
+
+                if model.quantization != nil || model.lastSharedAt != nil {
+                    HStack(spacing: Theme.Spacing.md) {
+                        if let q = model.quantization {
+                            Label(q, systemImage: "rectangle.compress.vertical")
+                        }
+                        if let lastShared = model.lastSharedAt {
+                            Label(lastShared.formatted(date: .numeric, time: .shortened), systemImage: "paperplane")
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .font(Theme.Typography.caption).foregroundStyle(Theme.textSecondary)
+                    .lineLimit(1)
+                }
 
                 if let snap = snapshot, model.status != "complete" {
                     ProgressView(value: snap.fractionCompleted)
