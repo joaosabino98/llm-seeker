@@ -91,13 +91,15 @@ struct ModelDetailView: View {
                     }
                 }
                 HStack(spacing: Theme.Spacing.md) {
-                    Button {
-                        Task { await downloadModel() }
-                    } label: {
-                        Label(downloadButtonTitle, systemImage: downloadButtonIcon)
+                    if !isDownloadInProgress {
+                        Button {
+                            Task { await downloadModel() }
+                        } label: {
+                            Label(downloadButtonTitle, systemImage: downloadButtonIcon)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(viewModel.isDownloading || downloadDisabled)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(viewModel.isDownloading || downloadDisabled)
 
                     if let dm = currentDownloadedModel {
                         Text(dm.status.capitalized)
@@ -240,6 +242,17 @@ struct ModelDetailView: View {
     }
 
     private var downloadDisabled: Bool { currentDownloadedModel?.status == "complete" }
+
+    /// True while a download is actively queued or running. Used to hide the
+    /// Download button once tapped so the status (e.g. "Downloading") only
+    /// shows once instead of duplicated on the button and label.
+    private var isDownloadInProgress: Bool {
+        if viewModel.isDownloading { return true }
+        switch currentDownloadedModel?.status {
+        case "queued", "downloading": return true
+        default: return false
+        }
+    }
 
     private func downloadModel() async {
         viewModel.isDownloading = true
