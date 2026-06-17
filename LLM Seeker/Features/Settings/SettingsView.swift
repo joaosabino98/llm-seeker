@@ -200,15 +200,12 @@ private struct AddMacProfileSheet: View {
                             Text(c.displayName).tag(c)
                         }
                     }
-                    .onChange(of: chip) { _, newChip in
-                        if !newChip.validRAMSKUs.contains(ram) {
-                            ram = newChip.validRAMSKUs.first ?? 16
-                        }
+                    .onChange(of: chip) { _, _ in
                     }
                 }
                 Section("Unified memory") {
                     Picker("RAM", selection: $ram) {
-                        ForEach(chip.validRAMSKUs, id: \.self) { sku in
+                        ForEach(AppleSiliconCatalog.standardRAMOptions, id: \.self) { sku in
                             Text("\(sku) GB").tag(sku)
                         }
                     }

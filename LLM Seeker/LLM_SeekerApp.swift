@@ -53,7 +53,7 @@ struct LLM_SeekerApp: App {
         let context = ModelContext(container)
         let descriptor = FetchDescriptor<MacProfile>()
         guard let profiles = try? context.fetch(descriptor), profiles.isEmpty else { return }
-        let defaultProfile = MacProfile(name: "My Mac", chipFamily: "M3 Pro", unifiedRAMGB: 18, isDefault: true)
+        let defaultProfile = MacProfile(name: "My Mac", chipFamily: "M5 Pro", unifiedRAMGB: 48, isDefault: true)
         context.insert(defaultProfile)
         try? context.save()
     }

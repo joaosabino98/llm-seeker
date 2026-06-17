@@ -59,31 +59,16 @@ enum AppleSiliconFamily: String, CaseIterable, Identifiable {
         }
     }
 
-    var validRAMSKUs: [Int] {
-        switch self {
-        case .m1: return [8, 16]
-        case .m1Pro: return [16, 32]
-        case .m1Max: return [32, 64]
-        case .m1Ultra: return [64, 128]
-        case .m2: return [8, 16, 24]
-        case .m2Pro: return [16, 32]
-        case .m2Max: return [32, 64, 96]
-        case .m2Ultra: return [64, 128, 192]
-        case .m3: return [8, 16, 24]
-        case .m3Pro: return [18, 36]
-        case .m3Max: return [36, 48, 64, 96, 128]
-        case .m4: return [16, 24, 32]
-        case .m4Pro: return [24, 48, 64]
-        case .m4Max: return [36, 48, 64, 96, 128]
-        case .m5: return [16, 24, 32]
-        case .m5Pro: return [24, 48, 64]
-        case .m5Max: return [48, 64, 96, 128]
-        }
-    }
 }
 
 struct AppleSiliconCatalog {
+    /// Standard unified-memory options shown in the Mac profile picker.
+    /// These are the real physical RAM amounts Apple sells, expressed as
+    /// round numbers — not Metal GPU memory caps, which can differ (e.g.
+    /// the M3 Pro's Metal cap is ~16.7 GB, while the actual RAM is 16 or
+    /// 24 GB depending on config).
+    static let standardRAMOptions: [Int] = [16, 24, 32, 48, 64]
+
     static let allChips = AppleSiliconFamily.allCases
-    static func validRAMForChip(_ chip: AppleSiliconFamily) -> [Int] { chip.validRAMSKUs }
     static func getChip(byName name: String) -> AppleSiliconFamily? { AppleSiliconFamily(rawValue: name) }
 }
