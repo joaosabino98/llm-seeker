@@ -435,7 +435,15 @@ actor DownloadManager {
         }
         if !activeTasks.isEmpty {
             let repos = Set(activeTasks.values.map { $0.repoId })
-            for repo in repos { await setModelStatus(repoId: repo, status: "downloading") }
+            for repo in repos {
+                // A repo whose last file just finalized may still have its
+                // (now-finished) task lingering in `activeTasks` because
+                // handleCompletion removes it in a `defer` that runs after this
+                // call. Never flip such a repo back to "downloading" — that's
+                // what kept completed downloads stuck showing progress.
+                if await isModelStatus(repoId: repo, "complete") { continue }
+                await setModelStatus(repoId: repo, status: "downloading")
+            }
         }
     }
 
@@ -738,7 +746,7 @@ actor DownloadManager {
 
     @MainActor
     private func isModelStatus(repoId: String, _ status: String) -> Bool {
-        let context = ModelContext(modelContainer)
+        let context = modelContainer.mainContext
         guard let models = try? context.fetch(FetchDescriptor<DownloadedModel>()) else { return false }
         return models.first(where: { $0.repoId == repoId })?.status == status
     }
@@ -852,7 +860,7 @@ actor DownloadManager {
 
     @MainActor
     private func setModelStatus(repoId: String, status: String) {
-        let context = ModelContext(modelContainer)
+        let context = modelContainer.mainContext
         guard let models = try? context.fetch(FetchDescriptor<DownloadedModel>()) else { return }
         guard let model = models.first(where: { $0.repoId == repoId }) else { return }
         if model.status != status {
@@ -864,7 +872,7 @@ actor DownloadManager {
 
     @MainActor
     private func setModelFolderBookmark(repoId: String, folder: URL) {
-        let context = ModelContext(modelContainer)
+        let context = modelContainer.mainContext
         guard let models = try? context.fetch(FetchDescriptor<DownloadedModel>()) else { return }
         guard let model = models.first(where: { $0.repoId == repoId }) else { return }
         model.localFolderURL = try? folder.bookmarkData()
@@ -873,7 +881,7 @@ actor DownloadManager {
 
     @MainActor
     private func setBytesOnDisk(repoId: String, bytes: Int64) {
-        let context = ModelContext(modelContainer)
+        let context = modelContainer.mainContext
         guard let models = try? context.fetch(FetchDescriptor<DownloadedModel>()) else { return }
         guard let model = models.first(where: { $0.repoId == repoId }) else { return }
         let clamped = model.totalBytes > 0 ? min(bytes, model.totalBytes) : bytes
@@ -885,7 +893,7 @@ actor DownloadManager {
 
     @MainActor
     private func markFileDownloaded(repoId: String, path: String, totalBytes: Int64) {
-        let context = ModelContext(modelContainer)
+        let context = modelContainer.mainContext
         guard let models = try? context.fetch(FetchDescriptor<DownloadedModel>()) else { return }
         guard let model = models.first(where: { $0.repoId == repoId }) else { return }
         if let file = model.files.first(where: { $0.relativePath == path }) {
@@ -899,7 +907,7 @@ actor DownloadManager {
 
     @MainActor
     private func markFileDownloadedFlag(repoId: String, path: String, downloaded: Bool) {
-        let context = ModelContext(modelContainer)
+        let context = modelContainer.mainContext
         guard let models = try? context.fetch(FetchDescriptor<DownloadedModel>()) else { return }
         guard let model = models.first(where: { $0.repoId == repoId }) else { return }
         if let file = model.files.first(where: { $0.relativePath == path }) {
@@ -911,7 +919,7 @@ actor DownloadManager {
 
     @MainActor
     private func persistResumeData(repoId: String, path: String, resumeData: Data) {
-        let context = ModelContext(modelContainer)
+        let context = modelContainer.mainContext
         guard let models = try? context.fetch(FetchDescriptor<DownloadedModel>()) else { return }
         guard let model = models.first(where: { $0.repoId == repoId }) else { return }
         if let file = model.files.first(where: { $0.relativePath == path }) {
@@ -923,7 +931,7 @@ actor DownloadManager {
 
     @MainActor
     private func clearResumeData(repoId: String, path: String) {
-        let context = ModelContext(modelContainer)
+        let context = modelContainer.mainContext
         guard let models = try? context.fetch(FetchDescriptor<DownloadedModel>()) else { return }
         guard let model = models.first(where: { $0.repoId == repoId }) else { return }
         if let file = model.files.first(where: { $0.relativePath == path }) {
@@ -934,7 +942,7 @@ actor DownloadManager {
 
     @MainActor
     private func areAllFilesDownloaded(repoId: String) -> Bool {
-        let context = ModelContext(modelContainer)
+        let context = modelContainer.mainContext
         guard let models = try? context.fetch(FetchDescriptor<DownloadedModel>()) else { return false }
         guard let model = models.first(where: { $0.repoId == repoId }) else { return false }
         guard !model.files.isEmpty else { return false }
@@ -961,7 +969,7 @@ actor DownloadManager {
 
     @MainActor
     private func deleteLocalFolder(repoId: String) {
-        let context = ModelContext(modelContainer)
+        let context = modelContainer.mainContext
         guard let models = try? context.fetch(FetchDescriptor<DownloadedModel>()) else { return }
         guard let model = models.first(where: { $0.repoId == repoId }) else { return }
         guard let bookmark = model.localFolderURL else { return }
@@ -980,7 +988,7 @@ actor DownloadManager {
 
     @MainActor
     private func deleteTempFolder(repoId: String) {
-        let context = ModelContext(modelContainer)
+        let context = modelContainer.mainContext
         guard let models = try? context.fetch(FetchDescriptor<DownloadedModel>()) else { return }
         guard let model = models.first(where: { $0.repoId == repoId }) else { return }
         guard let bookmark = model.localFolderURL else { return }
@@ -1013,7 +1021,7 @@ actor DownloadManager {
 
     @MainActor
     private func loadResumePlan(repoId: String) -> PersistedDownloadState? {
-        let context = ModelContext(modelContainer)
+        let context = modelContainer.mainContext
         guard let models = try? context.fetch(FetchDescriptor<DownloadedModel>()) else { return nil }
         guard let model = models.first(where: { $0.repoId == repoId }) else { return nil }
         guard let bookmark = model.localFolderURL else { return nil }
@@ -1034,7 +1042,7 @@ actor DownloadManager {
 
     @MainActor
     private func loadAllPersistedDownloadStates() -> [PersistedDownloadState] {
-        let context = ModelContext(modelContainer)
+        let context = modelContainer.mainContext
         guard let models = try? context.fetch(FetchDescriptor<DownloadedModel>()) else { return [] }
         return models.compactMap { model -> PersistedDownloadState? in
             guard let bookmark = model.localFolderURL else { return nil }
@@ -1056,7 +1064,7 @@ actor DownloadManager {
 
     @MainActor
     private func fetchFileLocation(repoId: String, path: String) -> (URL, Int64)? {
-        let context = ModelContext(modelContainer)
+        let context = modelContainer.mainContext
         guard let models = try? context.fetch(FetchDescriptor<DownloadedModel>()) else { return nil }
         guard let model = models.first(where: { $0.repoId == repoId }) else { return nil }
         guard let bookmark = model.localFolderURL else { return nil }
