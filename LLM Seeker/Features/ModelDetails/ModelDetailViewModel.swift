@@ -83,6 +83,15 @@ final class ModelDetailViewModel: ObservableObject {
                 ?? MacFitEstimator.inferParamCountFromText("\(summary.repoId) \(summary.displayName)")
         else { return nil }
         let quant = resolvedDetails.quantization ?? quantizationLabel
-        return MacFitEstimator.estimateFit(paramCountB: params, quantization: quant, macProfile: profile)
+        let activeParams = MacFitEstimator.inferActiveParamCount(
+            fromText: "\(summary.repoId) \(summary.displayName) \(summary.tags.joined(separator: " "))"
+        )
+        return MacFitEstimator.estimateFit(
+            paramCountB: params,
+            quantization: quant,
+            macProfile: profile,
+            actualModelBytes: resolvedDetails.totalBytes,
+            activeParamCountB: activeParams
+        )
     }
 }
