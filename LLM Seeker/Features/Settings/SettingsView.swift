@@ -12,7 +12,6 @@ struct SettingsView: View {
 
     @AppStorage("maxConcurrentDownloads") private var maxConcurrentDownloads: Int = 2
     @AppStorage("wifiOnlyDownloads") private var wifiOnlyDownloads: Bool = true
-    @AppStorage("autoDeleteAfterAirDrop") private var autoDeleteAfterAirDrop: Bool = false
     @AppStorage("shareAsZip") private var shareAsZip: Bool = false
 
     @State private var hfTokenInput: String = ""
@@ -145,7 +144,6 @@ struct SettingsView: View {
         GlassCard {
             VStack(alignment: .leading, spacing: Theme.Spacing.md) {
                 Text("Sharing").font(Theme.Typography.headline).foregroundStyle(Theme.text)
-                Toggle("Auto-delete after AirDrop", isOn: $autoDeleteAfterAirDrop).foregroundStyle(Theme.text)
                 Toggle("Share as ZIP archive", isOn: $shareAsZip).foregroundStyle(Theme.text)
                 Text(shareAsZip
                      ? "Sends one .zip file. Receiver must unzip into ~/.omlx/models/{owner}/{model}/."

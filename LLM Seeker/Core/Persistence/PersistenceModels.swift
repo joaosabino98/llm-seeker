@@ -30,7 +30,6 @@ final class DownloadedModel {
     var likes: Int?
     var addedAt: Date
     var lastSharedAt: Date?
-    var autoDeleteAfterShare: Bool
 
     @Relationship(deleteRule: .cascade, inverse: \FileItem.model) var files: [FileItem] = []
 
@@ -69,7 +68,6 @@ final class DownloadedModel {
         self.downloads = downloads
         self.likes = likes
         self.addedAt = Date()
-        self.autoDeleteAfterShare = false
     }
 
     var tags: [String] {

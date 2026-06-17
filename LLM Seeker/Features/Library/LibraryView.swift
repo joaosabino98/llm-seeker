@@ -19,7 +19,6 @@ struct LibraryView: View {
     @Query(sort: \DownloadedModel.addedAt, order: .reverse) private var models: [DownloadedModel]
     @StateObject private var progress = DownloadManager.shared.progressCenter
 
-    @AppStorage("autoDeleteAfterAirDrop") private var autoDeleteAfterAirDrop = false
     @AppStorage("didShowAirDropHelper") private var didShowAirDropHelper = false
     @AppStorage("shareAsZip") private var shareAsZip = false
 
@@ -120,9 +119,6 @@ struct LibraryView: View {
                 }
 
                 actionButtons(for: model)
-
-                Toggle("Delete after AirDrop", isOn: binding(for: model, keyPath: \DownloadedModel.autoDeleteAfterShare))
-                    .font(Theme.Typography.caption).foregroundStyle(Theme.textSecondary)
             }
         }
     }
@@ -250,12 +246,7 @@ struct LibraryView: View {
         guard let model = models.first(where: { $0.persistentModelID == session.modelId }) else { return }
         model.lastSharedAt = Date()
         try? modelContext.save()
-        if model.autoDeleteAfterShare || autoDeleteAfterAirDrop {
-            deleteModel(model)
-            showToast("Shared and deleted local copy")
-        } else {
-            showToast("Shared successfully")
-        }
+        showToast("Shared successfully")
     }
 
     private func deleteModel(_ model: DownloadedModel) {
@@ -304,15 +295,6 @@ struct LibraryView: View {
         }
     }
 
-    private func binding<Value>(for model: DownloadedModel, keyPath: ReferenceWritableKeyPath<DownloadedModel, Value>) -> Binding<Value> {
-        Binding(
-            get: { model[keyPath: keyPath] },
-            set: { newValue in
-                model[keyPath: keyPath] = newValue
-                try? modelContext.save()
-            }
-        )
-    }
 }
 
 #Preview { LibraryView() }
